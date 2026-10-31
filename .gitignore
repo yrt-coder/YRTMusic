@@ -1,0 +1,18 @@
+# Local builds and runtime data
+Build/
+BuildOutput/
+data/
+**/chrome-profile/
+
+# Local credentials and signing material
+.env
+.env.*
+*.pfx
+*.p12
+*.key
+
+# Editor and operating system files
+.vs/
+.vscode/
+Thumbs.db
+Desktop.ini
