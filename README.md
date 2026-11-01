@@ -21,6 +21,8 @@ YRT Music is a batch music downloader for Windows. Enter one song title per line
 
 **[Download YRTMusic-v1.0.zip](https://github.com/yrt-coder/YRTMusic/releases/download/v1.0/YRTMusic-v1.0.zip)**
 
+**Official release date: 2026-10-31 (Asia/Shanghai).** See the [release policy](docs/ReleasePolicy.md) for date verification.
+
 | Platform | Package | Requirements |
 | --- | --- | --- |
 | Windows 10 / 11, 64-bit | Portable ZIP with complete source | .NET Framework 4.8 and Google Chrome |

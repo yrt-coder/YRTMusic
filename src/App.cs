@@ -18,6 +18,8 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("YRT-GPT 音乐批量下载")]
 [assembly: AssemblyCopyright("© 2026 YRT-GPT")]
 [assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyMetadata("ReleaseDate", YrtMusic.ReleaseInfo.Date)]
+[assembly: AssemblyMetadata("ReleaseDateTimeZone", YrtMusic.ReleaseInfo.TimeZone)]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
 namespace YrtMusic
@@ -553,7 +555,7 @@ namespace YrtMusic
                     Name = "AboutInformation", Dock = DockStyle.Fill, ReadOnly = true,
                     Multiline = true, WordWrap = true, ScrollBars = ScrollBars.Vertical,
                     BackColor = Color.White, ForeColor = Ink, BorderStyle = BorderStyle.None,
-                    Text = "音乐批量下载 v1.0\r\n作者：YRT-GPT\r\n日期：2026年10月23日\r\n\r\n粘贴多行歌名，逐项搜索并下载网站提供的试听MP3。"
+                    Text = "音乐批量下载 v1.0\r\n作者：YRT-GPT\r\n发布日期：" + ReleaseInfo.Date + "\r\n\r\n粘贴多行歌名，逐项搜索并下载网站提供的试听MP3。"
                 };
                 FlowLayoutPanel actions = new FlowLayoutPanel
                 {

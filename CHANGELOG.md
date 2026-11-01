@@ -1,26 +1,15 @@
 # Changelog
 
-## 1.0.0
+## 1.0.0 — 2026-10-31
 
-The existing GitHub release tag is `v1.0`. The program's file version is `1.0.0.0`.
-
-### Original local version — October 23, 2026
+Official release date in Asia/Shanghai, verified from the existing GitHub release's `published_at`: `2026-10-31T05:09:48Z` (13:09:48 +08:00). The GitHub tag remains `v1.0`; the program's file version is `1.0.0.0`.
 
 - Batch song searches and automatic matching through Chrome.
 - Preview MP3 downloads to the desktop Music folder.
 - TXT import, task results, stop and resume controls.
-- 12, 14 and 16 pt text.
+- 12, 14 and 16 pt text, with 14 pt as the default.
+- A brief Help > About page, usage instructions, complete source and the MIT license.
+- English and Simplified Chinese project pages, original artwork and an actual Windows app screenshot.
+- Source in repository `src/`, a root build script and separate release helpers.
 
-### Documentation and About update — October 31, 2026
-
-- Added a brief Help > About page.
-- Simplified the introduction and usage instructions.
-- Prepared the portable ZIP with complete source code and the MIT license.
-- Kept the original search, matching and download code.
-
-### GitHub page refresh — October 31, 2026
-
-- Added original project artwork and an actual Windows app screenshot.
-- Added English and Simplified Chinese pages, download links and build instructions.
-- Expanded the existing source into repository `src/`, with a root build script and separate release helpers.
-- Presented the historical version as v1.0.0 while retaining the existing v1.0 download.
+The release date shown in the app and documentation is corrected to this official date. This correction does not create a new version or change the existing release's `published_at`. See the [release policy](docs/ReleasePolicy.md).

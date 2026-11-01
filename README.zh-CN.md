@@ -21,6 +21,8 @@ YRT Music 是一个 Windows 音乐批量下载工具。每行输入一首歌名�
 
 **[下载 YRTMusic-v1.0.zip](https://github.com/yrt-coder/YRTMusic/releases/download/v1.0/YRTMusic-v1.0.zip)**
 
+**正式发布日期：2026-10-31（Asia/Shanghai）。** 日期核验规则见[发布规范](docs/ReleasePolicy.md)。
+
 | 系统 | 下载包 | 运行环境 |
 | --- | --- | --- |
 | Windows 10 / 11，64 位 | 便携 ZIP，附完整源码 | .NET Framework 4.8 和已安装的 Chrome |
