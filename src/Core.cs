@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,258 +10,272 @@ using System.Web.Script.Serialization;
 
 namespace YrtMusic
 {
-    public sealed class BatchRunner : IDisposable
+    public sealed class MusicItem
+    {
+        public bool Selected { get; set; }
+        public string Title { get; set; }
+        public string Artist { get; set; }
+        public string SourcePage { get; set; }
+        public string State { get; set; }
+        public string Detail { get; set; }
+        public string FilePath { get; set; }
+    }
+    public sealed class SearchPage
+    {
+        public string Label { get; set; }
+        public string Url { get; set; }
+    }
+    public sealed class SearchResult
+    {
+        public List<MusicItem> Items { get; set; }
+        public List<SearchPage> Pages { get; set; }
+        public string QueryUsed { get; set; }
+        public string Notice { get; set; }
+    }
+    public sealed class MusicService : IDisposable
     {
         private const string Home = "https://www.gequhai.com/";
-        private readonly string dataDir, outputDirectory;
-        private readonly SemaphoreSlim browserLock = new SemaphoreSlim(1, 1);
-        private readonly SemaphoreSlim runLock = new SemaphoreSlim(1, 1);
-        private readonly object pauseLock = new object(), logLock = new object();
+        private readonly string dataDir;
+        private readonly SemaphoreSlim operation = new SemaphoreSlim(1, 1);
+        private readonly object logLock = new object();
         private ChromeSession browser;
-        private TaskCompletionSource<bool> resume;
-        private bool disposed;
+        private bool background = true, disposed;
+        public bool IsBackground { get { return background; } }
         public event Action<string> Log;
-        public event Action<MusicJob> JobChanged;
-        public event Action<string> NeedsUser;
-        public bool IsPaused { get { lock (pauseLock) return resume != null; } }
+        public event Action<MusicItem> ItemChanged;
 
-        public BatchRunner(string dataDirectory, string musicDirectory)
+        public MusicService(string directory)
         {
-            dataDir = Path.GetFullPath(dataDirectory);
-            outputDirectory = Path.GetFullPath(musicDirectory);
+            dataDir = Path.GetFullPath(directory);
             Directory.CreateDirectory(dataDir);
-        }
-        public async Task OpenBrowserAsync(CancellationToken token)
-        {
-            await EnsureBrowserAsync(token).ConfigureAwait(false);
-            if (browser.PageUrl == "about:blank") await browser.NavigateAsync(Home, token).ConfigureAwait(false);
-            await browser.BringToFrontAsync(token).ConfigureAwait(false);
         }
         private async Task EnsureBrowserAsync(CancellationToken token)
         {
-            await browserLock.WaitAsync(token).ConfigureAwait(false);
+            if (disposed) throw new ObjectDisposedException("MusicService");
+            if (browser != null && browser.IsRunning) return;
+            if (browser != null) browser.Dispose();
+            browser = new ChromeSession();
+            await browser.StartAsync(Path.Combine(dataDir, "chrome-profile"), background, token).ConfigureAwait(false);
+            WriteLog(background ? "后台浏览器已就绪。" : "验证浏览器已打开。");
+        }
+        public async Task SetBrowserVisibleAsync(bool visible, CancellationToken token)
+        {
+            await operation.WaitAsync(token).ConfigureAwait(false);
             try
             {
-                if (disposed) throw new ObjectDisposedException("BatchRunner");
-                if (browser != null && browser.IsRunning) return;
-                if (browser != null) browser.Dispose();
-                browser = new ChromeSession();
-                await browser.StartAsync(Path.Combine(dataDir, "chrome-profile"), token).ConfigureAwait(false);
-                WriteLog("Chrome 已打开，使用本程序的独立浏览器窗口。");
+                bool requestedBackground = !visible;
+                string current = browser == null ? Home : browser.PageUrl;
+                if (!IsSiteUrl(current)) current = Home;
+                if (background != requestedBackground)
+                {
+                    if (browser != null) { browser.Dispose(); browser = null; }
+                    background = requestedBackground;
+                }
+                await EnsureBrowserAsync(token).ConfigureAwait(false);
+                await browser.NavigateAsync(current, token).ConfigureAwait(false);
+                if (visible) await browser.BringToFrontAsync(token).ConfigureAwait(false);
             }
-            finally { browserLock.Release(); }
+            finally { operation.Release(); }
         }
-        public async Task RunAsync(IList<MusicJob> jobs, CancellationToken token)
+        public async Task<SearchResult> SearchAsync(string keyword, CancellationToken token)
         {
-            if (!await runLock.WaitAsync(0, token).ConfigureAwait(false)) throw new InvalidOperationException("已有一批任务正在运行。");
+            string query = CleanQuery(keyword);
+            if (query.Length == 0) throw new ArgumentException("请输入歌名、歌手或部分关键词。");
+            if (query.Length > 50) throw new ArgumentException("网站搜索最多支持 50 个字，请缩短关键词。");
+            await operation.WaitAsync(token).ConfigureAwait(false);
             try
             {
                 await EnsureBrowserAsync(token).ConfigureAwait(false);
-                Directory.CreateDirectory(outputDirectory);
-                var seenPages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                WriteLog("开始逐项搜索并下载试听 MP3，共 " + jobs.Count + " 项。保存位置：" + outputDirectory);
-                foreach (MusicJob job in jobs)
+                WriteLog("搜索：" + query);
+                await browser.NavigateAsync(Home, token).ConfigureAwait(false);
+                await WaitPageAsync(s => Text(s, "path") == "/" && Flag(s, "hasInput"), 60, token).ConfigureAwait(false);
+                string script = "(()=>{const i=document.querySelector('#s-input,#s-input-line'),b=document.querySelector('#s-btn,#s-btn-line');if(!i||!b)return false;i.value=" + new JavaScriptSerializer().Serialize(query) + ";i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}));b.click();return true;})()";
+                object submitted = await browser.EvaluateAsync(script, token).ConfigureAwait(false);
+                if (!(submitted is bool) || !(bool)submitted) throw new InvalidOperationException("网页的搜索入口发生变化，请稍后重试。");
+                // The normal site sometimes resolves an uncached query for about a minute.
+                Dictionary<string, object> state = await WaitPageAsync(s => Text(s, "path").TrimEnd('/') == "/search" && String.Equals(CleanQuery(Text(s, "searchKey")), query, StringComparison.OrdinalIgnoreCase), 100, token).ConfigureAwait(false);
+                return ReadResults(state, query);
+            }
+            finally { operation.Release(); }
+        }
+        public async Task<SearchResult> LoadPageAsync(string url, CancellationToken token)
+        {
+            Uri target;
+            if (!TrySiteUri(url, out target) || target.AbsolutePath.TrimEnd('/') != "/search") throw new ArgumentException("该地址不是网站提供的搜索结果页。");
+            await operation.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                await EnsureBrowserAsync(token).ConfigureAwait(false);
+                await browser.NavigateAsync(url, token).ConfigureAwait(false);
+                var state = await WaitPageAsync(s => SamePage(Text(s, "url"), url), 100, token).ConfigureAwait(false);
+                return ReadResults(state, Text(state, "searchKey"));
+            }
+            finally { operation.Release(); }
+        }
+        public async Task DownloadAsync(IList<MusicItem> items, string outputDirectory, CancellationToken token)
+        {
+            if (items == null || items.Count == 0) throw new ArgumentException("请选择需要下载的歌曲。");
+            if (String.IsNullOrWhiteSpace(outputDirectory)) throw new ArgumentException("请先选择下载目录。");
+            string output = Path.GetFullPath(outputDirectory);
+            MusicItem[] selected = items.ToArray();
+            await operation.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                Directory.CreateDirectory(output);
+                await EnsureBrowserAsync(token).ConfigureAwait(false);
+                foreach (MusicItem item in selected)
                 {
                     token.ThrowIfCancellationRequested();
-                    if (job.Query.Length > 50)
-                    {
-                        Change(job, "未匹配", "网站搜索最多 50 字，请缩短这一行。");
-                        continue;
-                    }
-                    try
-                    {
-                        bool complete = false;
-                        while (!complete)
-                        {
-                            string pauseMessage = null;
-                            try
-                            {
-                                await ProcessAsync(job, seenPages, token).ConfigureAwait(false);
-                                complete = true;
-                            }
-                            catch (WebsitePauseException ex) { pauseMessage = ex.Message; }
-                            if (pauseMessage != null)
-                            {
-                                await WaitForUserAsync(job, pauseMessage, token).ConfigureAwait(false);
-                                await EnsureBrowserAsync(token).ConfigureAwait(false);
-                            }
-                        }
-                    }
-                    catch (OperationCanceledException) { Change(job, "已停止", "本次操作已取消。"); throw; }
-                    catch (Exception ex)
-                    {
-                        Change(job, "失败", ex.Message);
-                        WriteLog("第 " + job.Index + " 项未完成：" + job.Query + "；" + ex.Message);
-                    }
-                    await Task.Delay(2000, token).ConfigureAwait(false);
+                    string manual = null;
+                    try { await DownloadOneAsync(item, output, token).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { Change(item, "已取消", "本次下载已取消。"); throw; }
+                    catch (SiteAttentionException ex) { Change(item, "需处理", ex.Message); manual = ex.Message; }
+                    catch (Exception ex) { Change(item, "失败", ex.Message); WriteLog(item.Title + "：" + ex.Message); }
+                    if (manual != null) throw new InvalidOperationException(manual);
+                    await Task.Delay(1200, token).ConfigureAwait(false);
                 }
-                WriteLog("本批处理结束。请以每首歌曲的状态和实际文件为准。");
             }
-            catch (OperationCanceledException)
-            {
-                foreach (MusicJob job in jobs) if (job.State == "待处理") Change(job, "已停止", "未开始；本批已停止。");
-                WriteLog("任务已停止，已完成的音乐文件已保留。");
-                throw;
-            }
-            finally
-            {
-                lock (pauseLock) resume = null;
-                runLock.Release();
-            }
+            finally { operation.Release(); }
         }
-        private async Task ProcessAsync(MusicJob job, HashSet<string> seenPages, CancellationToken token)
+        private async Task DownloadOneAsync(MusicItem item, string output, CancellationToken token)
         {
-            Change(job, "搜索中", "正在 Chrome 中打开歌曲海。");
-            await browser.NavigateAsync(Home, token).ConfigureAwait(false);
-            await WaitPageAsync(s => Flag(s, "hasInput"), token).ConfigureAwait(false);
-            string query = new JavaScriptSerializer().Serialize(job.Query);
-            string searchScript = "(()=>{const i=document.querySelector('#s-input,#s-input-line');const b=document.querySelector('#s-btn,#s-btn-line');if(!i||!b)return false;i.value=" + query + ";i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}));b.click();return true;})()";
-            object submitted = await browser.EvaluateAsync(searchScript, token).ConfigureAwait(false);
-            if (!(submitted is bool) || !(bool)submitted) throw new WebsitePauseException("网页搜索控件发生变化。请在 Chrome 检查页面，处理后点击“继续任务”。");
-            Dictionary<string, object> results = await WaitPageAsync(s => Text(s, "path") == "/search" && Text(s, "searchKey") == job.Query, token).ConfigureAwait(false);
-            List<SongCandidate> candidates = ReadCandidates(results);
-            if (candidates.Count == 0) { Change(job, "未匹配", "网站没有返回相关歌曲。"); return; }
-            SongCandidate best = SongTools.SelectBest(job.Query, candidates);
-            if (best == null) { Change(job, "未匹配", "没有足够匹配的版本；可使用“歌名 - 歌手”缩小范围。"); return; }
-            job.Title = best.Title; job.Artist = best.Artist; job.SourcePage = best.Url;
-            if (seenPages.Contains(best.Url)) { Change(job, "已跳过", "本批已经下载了同一首、同一来源的歌曲。"); return; }
-            Change(job, "已匹配", "匹配度 " + (best.Score * 100).ToString("0", CultureInfo.InvariantCulture) + "% · 正在获取试听下载入口。");
-            await browser.NavigateAsync(best.Url, token).ConfigureAwait(false);
-            await WaitPageAsync(s => Flag(s, "hasDownload"), token).ConfigureAwait(false);
+            Uri source;
+            if (item == null || !TrySiteUri(item.SourcePage, out source) || !System.Text.RegularExpressions.Regex.IsMatch(source.AbsolutePath, @"^/play/\d+/?$"))
+                throw new InvalidDataException("这首歌没有有效的来源页面，请重新搜索。");
+            string existingReason;
+            if (!String.IsNullOrWhiteSpace(item.FilePath) && File.Exists(item.FilePath) && item.State == "已完成" && String.Equals(Path.GetDirectoryName(Path.GetFullPath(item.FilePath)).TrimEnd(Path.DirectorySeparatorChar), output.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase) && SongTools.IsMp3(item.FilePath, out existingReason))
+            {
+                Change(item, "已完成", "文件已在当前目录中，可双击打开位置。"); return;
+            }
+            Change(item, "检查音源", "正在检查所选歌曲的试听 MP3。");
+            await browser.NavigateAsync(item.SourcePage, token).ConfigureAwait(false);
+            await WaitPageAsync(s => SamePage(Text(s, "url"), item.SourcePage) && Flag(s, "hasDownload"), 60, token).ConfigureAwait(false);
             await browser.EvaluateAsync("(()=>{const b=document.querySelector('#btn-download-mp3');if(!b)return false;b.click();return true;})()", token).ConfigureAwait(false);
-            Dictionary<string, object> quality = await WaitQualityAsync(token).ConfigureAwait(false);
-            string mediaUrl = Text(quality, "url");
-            Uri uri;
-            if (!Uri.TryCreate(mediaUrl, UriKind.Absolute, out uri) || (uri.Scheme != "https" && uri.Scheme != "http") || !String.IsNullOrEmpty(uri.UserInfo))
-                throw new InvalidDataException("网站没有提供可直接下载的公开试听链接。");
-            Change(job, "下载中", "试听音质 MP3，等待 Chrome 完成下载。");
+            string media = await WaitQualityAsync(token).ConfigureAwait(false);
+            Uri mediaUri;
+            if (!Uri.TryCreate(media, UriKind.Absolute, out mediaUri) || (mediaUri.Scheme != "https" && mediaUri.Scheme != "http") || !String.IsNullOrEmpty(mediaUri.UserInfo))
+                throw new InvalidDataException("网站没有提供可直接下载的试听链接。");
+            Change(item, "下载中", "正在下载试听 MP3。");
             string incoming = Path.Combine(dataDir, "incoming");
             ChromeDownload download = null;
             try
             {
-                download = await browser.DownloadAsync(mediaUrl, incoming, token).ConfigureAwait(false);
+                download = await browser.DownloadAsync(media, incoming, token).ConfigureAwait(false);
                 token.ThrowIfCancellationRequested();
                 string reason;
                 if (!SongTools.IsMp3(download.FullPath, out reason)) throw new InvalidDataException("下载内容不是有效 MP3：" + reason);
                 token.ThrowIfCancellationRequested();
-                job.FilePath = SongTools.MoveToMusic(download.FullPath, outputDirectory, best.Title, best.Artist);
-                seenPages.Add(best.Url);
-                Change(job, "已完成", "已保存：" + Path.GetFileName(job.FilePath));
-                WriteLog("已下载：" + best.Title + " - " + best.Artist + " → " + job.FilePath);
+                item.FilePath = SongTools.MoveToMusic(download.FullPath, output, item.Title, item.Artist);
+                Change(item, "已完成", "已保存：" + item.FilePath);
+                WriteLog("已保存：" + item.FilePath);
             }
             finally
             {
                 if (download != null && File.Exists(download.FullPath))
                 {
-                    string full = Path.GetFullPath(download.FullPath);
-                    string prefix = Path.GetFullPath(incoming).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-                    if (full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) try { File.Delete(full); } catch (IOException) { }
+                    string path = Path.GetFullPath(download.FullPath), prefix = Path.GetFullPath(incoming).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    if (path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) try { File.Delete(path); } catch (IOException) { }
                 }
             }
         }
-        private async Task<Dictionary<string, object>> WaitPageAsync(Func<Dictionary<string, object>, bool> ready, CancellationToken token)
+        private async Task<Dictionary<string, object>> WaitPageAsync(Func<Dictionary<string, object>, bool> ready, int seconds, CancellationToken token)
         {
-            DateTime until = DateTime.UtcNow.AddSeconds(40);
-            string last = "页面尚未准备好。";
-            while (DateTime.UtcNow < until)
+            DateTime deadline = DateTime.UtcNow.AddSeconds(seconds);
+            while (DateTime.UtcNow < deadline)
             {
                 token.ThrowIfCancellationRequested();
                 Dictionary<string, object> page = null;
                 try { page = AsDict(await browser.EvaluateAsync(PageSnapshot, token).ConfigureAwait(false)); }
-                catch (InvalidOperationException ex) { last = ex.Message; }
+                catch (InvalidOperationException ex)
+                {
+                    if (!browser.IsRunning) throw new SiteAttentionException("后台浏览器已关闭，请重试搜索或下载。");
+                    if (ex.Message.IndexOf("context", StringComparison.OrdinalIgnoreCase) < 0 && ex.Message.IndexOf("navigation", StringComparison.OrdinalIgnoreCase) < 0) throw;
+                }
                 if (page != null)
                 {
                     CheckPage(page);
                     if (Text(page, "ready") == "complete" && ready(page)) return page;
-                    last = Text(page, "title");
                 }
                 await Task.Delay(400, token).ConfigureAwait(false);
             }
-            throw new WebsitePauseException("网站页面未能在 40 秒内准备好：" + last + "。请检查 Chrome，处理后点击“继续任务”，也可以停止。");
+            throw new SiteAttentionException("网站暂时未响应。可重试，或从“帮助 → 在浏览器处理”检查网站后再搜索。");
         }
-        private async Task<Dictionary<string, object>> WaitQualityAsync(CancellationToken token)
+        private async Task<string> WaitQualityAsync(CancellationToken token)
         {
-            DateTime until = DateTime.UtcNow.AddSeconds(30);
-            while (DateTime.UtcNow < until)
+            DateTime deadline = DateTime.UtcNow.AddSeconds(35);
+            while (DateTime.UtcNow < deadline)
             {
-                var page = AsDict(await browser.EvaluateAsync(PageSnapshot, token).ConfigureAwait(false));
-                CheckPage(page);
-                var value = AsDict(await browser.EvaluateAsync(QualitySnapshot, token).ConfigureAwait(false));
-                if (value != null && Flag(value, "found") && !String.IsNullOrWhiteSpace(Text(value, "url"))) return value;
+                var state = AsDict(await browser.EvaluateAsync(PageSnapshot, token).ConfigureAwait(false));
+                CheckPage(state);
+                var quality = AsDict(await browser.EvaluateAsync(QualitySnapshot, token).ConfigureAwait(false));
+                if (Flag(quality, "found") && !String.IsNullOrWhiteSpace(Text(quality, "url"))) return Text(quality, "url");
                 await Task.Delay(400, token).ConfigureAwait(false);
             }
-            throw new InvalidDataException("网站未提供可用的“试听音质 MP3”入口；本项未下载。请稍后在 Chrome 核对。");
+            throw new InvalidDataException("这首歌暂时没有可用的公开试听 MP3 链接。");
+        }
+        private SearchResult ReadResults(Dictionary<string, object> state, string query)
+        {
+            var items = new List<MusicItem>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (object entry in Values(state, "rows"))
+            {
+                var row = AsDict(entry); string url = Text(row, "url"); Uri uri;
+                if (TrySiteUri(url, out uri) && System.Text.RegularExpressions.Regex.IsMatch(uri.AbsolutePath, @"^/play/\d+/?$") && seen.Add(uri.AbsoluteUri))
+                    items.Add(new MusicItem { Title = Text(row, "title"), Artist = Text(row, "artist"), SourcePage = uri.AbsoluteUri, State = "未下载", Detail = "点击“下载”检查并保存试听 MP3。", FilePath = "" });
+            }
+            var pages = new List<SearchPage>();
+            foreach (object entry in Values(state, "pages"))
+            {
+                var row = AsDict(entry); Uri uri; string url = Text(row, "url");
+                if (TrySiteUri(url, out uri) && uri.AbsolutePath.TrimEnd('/') == "/search" && !pages.Any(p => p.Url == uri.AbsoluteUri)) pages.Add(new SearchPage { Label = Text(row, "label"), Url = uri.AbsoluteUri });
+            }
+            WriteLog("搜索“" + query + "”：网站本页返回 " + items.Count + " 首，等待选择；未下载任何歌曲。");
+            return new SearchResult { Items = items, Pages = pages, QueryUsed = query, Notice = items.Count == 0 ? "没有找到相关歌曲，可换歌手名或更短的关键词。" : "本页 " + items.Count + " 首，选择喜欢的歌曲下载。" };
         }
         private static void CheckPage(Dictionary<string, object> page)
         {
+            if (page == null) return;
             string text = Text(page, "text");
-            string[] markers = { "访问异常", "请求过于频繁", "访问过于频繁", "人机验证", "验证码", "Forbidden", "Access denied", "Just a moment", "Verify you are human", "安全验证", "429 Too Many" };
-            foreach (string marker in markers) if (text.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0)
-                throw new WebsitePauseException("网站显示“" + marker + "”。请在 Chrome 中正常处理，完成后点击“继续任务”。");
-            Uri uri;
-            if (!Uri.TryCreate(Text(page, "url"), UriKind.Absolute, out uri) || !(uri.Host == "www.gequhai.com" || uri.Host == "gequhai.com"))
-                throw new WebsitePauseException("Chrome 当前未显示歌曲海正常页面。请检查网络与网页，再点击“继续任务”。");
+            foreach (string marker in new[] { "访问异常", "请求过于频繁", "访问过于频繁", "人机验证", "Forbidden", "Access denied", "Just a moment", "Verify you are human", "安全验证", "429 Too Many" })
+                if (text.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0) throw new SiteAttentionException("网站显示“" + marker + "”。请从“帮助 → 在浏览器处理”正常处理后重试。");
+            string url = Text(page, "url");
+            if (url == "about:blank" || String.IsNullOrEmpty(url)) return;
+            if (!IsSiteUrl(url)) throw new SiteAttentionException("当前没有加载歌曲海正常页面，请检查网络，或从“帮助 → 在浏览器处理”后重试。");
         }
-        private async Task WaitForUserAsync(MusicJob job, string message, CancellationToken token)
+        private void Change(MusicItem item, string state, string detail)
         {
-            var waiting = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            lock (pauseLock) resume = waiting;
-            Change(job, "等待处理", message);
-            WriteLog(message);
-            Action<string> handler = NeedsUser; if (handler != null) handler(message);
+            item.State = state; item.Detail = detail;
+            var handler = ItemChanged; if (handler != null) handler(item);
             try
             {
-                await browser.BringToFrontAsync(token).ConfigureAwait(false);
-                using (token.Register(() => waiting.TrySetCanceled())) await waiting.Task.ConfigureAwait(false);
-                token.ThrowIfCancellationRequested();
-            }
-            finally { lock (pauseLock) if (resume == waiting) resume = null; }
-        }
-        public void Continue() { lock (pauseLock) if (resume != null) resume.TrySetResult(true); }
-        private void Change(MusicJob job, string state, string detail)
-        {
-            job.State = state; job.Detail = detail;
-            Action<MusicJob> handler = JobChanged; if (handler != null) handler(job);
-            try
-            {
-                string line = new JavaScriptSerializer().Serialize(new { time = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(8)).ToString("o"), index = job.Index, query = job.Query, title = job.Title, artist = job.Artist, state = state, detail = detail, file = job.FilePath, page = job.SourcePage });
-                lock (logLock) File.AppendAllText(Path.Combine(dataDir, "tasks.jsonl"), line + Environment.NewLine, Encoding.UTF8);
+                string line = new JavaScriptSerializer().Serialize(new { time = Now(), title = item.Title, artist = item.Artist, page = item.SourcePage, state = state, detail = detail, file = item.FilePath });
+                lock (logLock) File.AppendAllText(Path.Combine(dataDir, "downloads.jsonl"), line + Environment.NewLine, Encoding.UTF8);
             }
             catch (IOException) { }
         }
         private void WriteLog(string message)
         {
-            string line = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(8)).ToString("yyyy-MM-dd HH:mm:ss zzz") + "  " + message;
-            Action<string> handler = Log; if (handler != null) handler(line);
+            string line = Now() + "  " + message;
+            var handler = Log; if (handler != null) handler(line);
             try { lock (logLock) File.AppendAllText(Path.Combine(dataDir, "run.log"), line + Environment.NewLine, Encoding.UTF8); } catch (IOException) { }
         }
-        private static List<SongCandidate> ReadCandidates(Dictionary<string, object> page)
+        private static string Now() { return DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(8)).ToString("yyyy-MM-dd HH:mm:ss zzz"); }
+        private static string CleanQuery(string value) { return System.Text.RegularExpressions.Regex.Replace((value ?? "").Normalize(NormalizationForm.FormKC).Replace("%", "").Trim(), @"\s+", " "); }
+        private static bool TrySiteUri(string value, out Uri uri) { return Uri.TryCreate(value, UriKind.Absolute, out uri) && (uri.Scheme == "https" || uri.Scheme == "http") && String.IsNullOrEmpty(uri.UserInfo) && (uri.Host == "www.gequhai.com" || uri.Host == "gequhai.com"); }
+        private static bool IsSiteUrl(string value) { Uri uri; return TrySiteUri(value, out uri); }
+        private static bool SamePage(string a, string b)
         {
-            var result = new List<SongCandidate>();
-            object items; if (page == null || !page.TryGetValue("rows", out items)) return result;
-            var rows = items as IEnumerable; if (rows == null) return result;
-            foreach (object row in rows)
-            {
-                var d = AsDict(row); Uri uri; string url = Text(d, "url");
-                if (Uri.TryCreate(url, UriKind.Absolute, out uri) && (uri.Host == "www.gequhai.com" || uri.Host == "gequhai.com") && System.Text.RegularExpressions.Regex.IsMatch(uri.AbsolutePath, @"^/play/\d+/?$"))
-                    result.Add(new SongCandidate { Title = Text(d, "title"), Artist = Text(d, "artist"), Url = url });
-            }
-            return result;
+            Uri first, second;
+            return TrySiteUri(a, out first) && TrySiteUri(b, out second) && String.Equals(Uri.UnescapeDataString(first.PathAndQuery).Replace('+', ' '), Uri.UnescapeDataString(second.PathAndQuery).Replace('+', ' '), StringComparison.OrdinalIgnoreCase);
         }
         private static Dictionary<string, object> AsDict(object value) { return value as Dictionary<string, object>; }
-        private static string Text(Dictionary<string, object> d, string key) { object v; return d != null && d.TryGetValue(key, out v) && v != null ? v.ToString() : ""; }
-        private static bool Flag(Dictionary<string, object> d, string key) { object v; return d != null && d.TryGetValue(key, out v) && v is bool && (bool)v; }
-        public void Dispose()
-        {
-            if (disposed) return;
-            disposed = true;
-            lock (pauseLock) if (resume != null) resume.TrySetCanceled();
-            if (browser != null) browser.Dispose();
-        }
-        private sealed class WebsitePauseException : Exception { public WebsitePauseException(string text) : base(text) { } }
+        private static string Text(Dictionary<string, object> d, string key) { object value; return d != null && d.TryGetValue(key, out value) && value != null ? value.ToString() : ""; }
+        private static bool Flag(Dictionary<string, object> d, string key) { object value; return d != null && d.TryGetValue(key, out value) && value is bool && (bool)value; }
+        private static IEnumerable Values(Dictionary<string, object> d, string key) { object value; return d != null && d.TryGetValue(key, out value) && value is IEnumerable ? (IEnumerable)value : new object[0]; }
+        public void Dispose() { if (disposed) return; disposed = true; if (browser != null) browser.Dispose(); }
+        private sealed class SiteAttentionException : Exception { public SiteAttentionException(string message) : base(message) { } }
 
-        // These selectors are from the actual site opened normally in Chrome on 2026-10-23.
-        private const string PageSnapshot = @"(()=>({url:location.href,path:location.pathname,title:document.title,ready:document.readyState,text:(document.body?document.body.innerText:'').slice(0,14000),hasInput:!!document.querySelector('#s-input,#s-input-line'),hasDownload:!!document.querySelector('#btn-download-mp3'),searchKey:(document.querySelector('#s-input-line')||{}).value||'',rows:[...document.querySelectorAll('table tbody tr')].map(tr=>{const a=tr.querySelector('a[href^=""/play/""]'),td=tr.querySelectorAll('td');return a?{title:a.textContent.trim(),artist:td.length>=3?td[2].textContent.trim():'',url:a.href}:null}).filter(Boolean)}))()";
-        private const string QualitySnapshot = @"(()=>{const toggle=document.querySelector('#dl-toggle'),collapse=document.querySelector('#dl-collapse');if(toggle&&collapse&&!collapse.classList.contains('open'))toggle.click();const a=[...document.querySelectorAll('.dl-btn-lq')].find(x=>/试听音质|标准品质\s*MP3/i.test(x.textContent));if(!a||!a.getClientRects().length)return {found:false};const href=a.getAttribute('href');const url=href&&/^https?:/i.test(href)?a.href:(typeof window.mp3_url==='string'?window.mp3_url:'');return {found:true,url:url,label:a.textContent.trim()};})()";
+        private const string PageSnapshot = @"(()=>({url:location.href,path:location.pathname,title:document.title,ready:document.readyState,text:(document.body?document.body.innerText:'').slice(0,14000),hasInput:!!document.querySelector('#s-input,#s-input-line'),hasDownload:!!document.querySelector('#btn-download-mp3'),searchKey:(document.querySelector('#s-input-line')||{}).value||'',rows:[...document.querySelectorAll('table tbody tr')].map(tr=>{const a=tr.querySelector('a[href^=""/play/""]'),td=tr.querySelectorAll('td');return a?{title:a.textContent.trim(),artist:td.length>=3?td[2].textContent.trim():'',url:a.href}:null}).filter(Boolean),pages:[...document.querySelectorAll('.pagination a[href],a.page-link[href],a[rel=""next""][href],a[rel=""prev""][href]')].filter(a=>!a.closest('.disabled')&&a.getAttribute('aria-disabled')!=='true').map(a=>({label:a.textContent.trim()||a.getAttribute('aria-label')||'更多',url:a.href}))}))()";
+        private const string QualitySnapshot = @"(()=>{const toggle=document.querySelector('#dl-toggle'),collapse=document.querySelector('#dl-collapse');if(toggle&&collapse&&!collapse.classList.contains('open'))toggle.click();const a=[...document.querySelectorAll('.dl-btn-lq')].find(x=>/试听音质|标准品质\s*MP3/i.test(x.textContent));if(!a||!a.getClientRects().length)return {found:false};const href=a.getAttribute('href'),url=href&&/^https?:/i.test(href)?a.href:(typeof window.mp3_url==='string'?window.mp3_url:'');return {found:true,url:url,label:a.textContent.trim()};})()";
     }
 }

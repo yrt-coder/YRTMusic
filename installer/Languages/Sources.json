@@ -1,0 +1,23 @@
+{
+  "editor": "YRT-GPT",
+  "retrievedAtUtc": "2026-10-31T03:20:03.1454288+00:00",
+  "sourceIndex": "https://jrsoftware.org/files/istrans/",
+  "translationFiles": [
+    {
+      "file": "ChineseSimplified.isl",
+      "sourceUrl": "https://raw.githubusercontent.com/jrsoftware/issrc/2527da77ff7983514f535d19391a748c5d898336/Files/Languages/ChineseSimplified.isl",
+      "sha256": "E0B0B350E2245F3C5E65586DFE43D574F6E7F06F2261149ABA284954B3FC9A8D",
+      "sourceCommit": "2527da77ff7983514f535d19391a748c5d898336",
+      "bytes": 21516
+    },
+    {
+      "file": "ChineseTraditional.isl",
+      "sourceUrl": "https://raw.githubusercontent.com/jrsoftware/issrc/2527da77ff7983514f535d19391a748c5d898336/Files/Languages/ChineseTraditional.isl",
+      "sha256": "031684FC769259291FD563338B5ABE20B7753C88AB5A2976B83A80788DEB8455",
+      "sourceCommit": "2527da77ff7983514f535d19391a748c5d898336",
+      "bytes": 21754
+    }
+  ],
+  "licenseFile": "InnoSetup-LICENSE.txt",
+  "originalHeadersPreserved": true
+}

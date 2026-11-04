@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="640" viewBox="0 0 1440 640" role="img" aria-labelledby="title desc">
+  <title id="title">YRT Music v1.1</title>
+  <desc id="desc">Original project artwork. Search, choose and download public preview MP3s on Windows.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#f0faf5"/><stop offset="1" stop-color="#d0eede"/></linearGradient>
+    <linearGradient id="green" x2="1" y2="1"><stop stop-color="#168560"/><stop offset="1" stop-color="#064e3b"/></linearGradient>
+    <radialGradient id="disc"><stop stop-color="#286f58"/><stop offset=".28" stop-color="#164f3e"/><stop offset=".3" stop-color="#113e32"/><stop offset="1" stop-color="#062b24"/></radialGradient>
+  </defs>
+  <rect width="1440" height="640" rx="30" fill="url(#bg)"/>
+  <circle cx="1240" cy="40" r="320" fill="#fff" opacity=".35"/>
+  <path d="M0 520 C340 360 580 730 1040 460 S1440 320 1540 390 V640 H0Z" fill="#a6dfc4" opacity=".5"/>
+  <path d="M0 595 C400 460 610 690 1020 550 S1340 470 1440 500 V640 H0Z" fill="#70c7a4" opacity=".25"/>
+  <rect x="78" y="76" width="96" height="96" rx="26" fill="url(#green)"/>
+  <path d="M103 103 L126 126 L149 103 M126 126 V149" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="118" cy="153" rx="12" ry="7" fill="#fff" transform="rotate(-25 118 153)"/>
+  <text x="80" y="268" font-family="Segoe UI,Arial,sans-serif" font-size="80" font-weight="700" fill="#074c39">YRT Music</text>
+  <rect x="81" y="302" width="92" height="41" rx="20" fill="#087456"/>
+  <text x="127" y="330" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="600" text-anchor="middle" fill="white">v1.1</text>
+  <text x="81" y="403" font-family="Segoe UI,Arial,sans-serif" font-size="29" font-weight="600" fill="#185e49">Search. Choose. Download.</text>
+  <text x="81" y="450" font-family="Segoe UI,Arial,sans-serif" font-size="22" fill="#477765">Windows · Public preview MP3s · Open source</text>
+  <g transform="translate(1090 313)">
+    <circle r="211" fill="#0a4e3b" opacity=".1"/>
+    <circle r="196" fill="url(#disc)"/>
+    <g fill="none" stroke="#75b59b" opacity=".19"><circle r="174"/><circle r="163"/><circle r="152"/><circle r="141"/><circle r="130"/><circle r="119"/></g>
+    <circle r="80" fill="#d3f0df"/>
+    <circle r="15" fill="#1c6a51"/>
+    <path d="M-17-41 V37 M-17-41 L38-54 V24" fill="none" stroke="#0a7555" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="-29" cy="40" rx="20" ry="13" fill="#0a7555" transform="rotate(-20 -29 40)"/>
+    <ellipse cx="26" cy="27" rx="20" ry="13" fill="#0a7555" transform="rotate(-20 26 27)"/>
+  </g>
+  <text x="81" y="584" font-family="Segoe UI,Arial,sans-serif" font-size="16" fill="#477765">YRT-GPT</text>
+</svg>

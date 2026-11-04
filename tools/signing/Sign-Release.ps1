@@ -33,7 +33,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $report = [ordered]@{
     schemaVersion = 2
-    applicationVersion = '1.0.0.0'
+    applicationVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($ExePath).FileVersion
     localSigningStartedAtUtc = $null
     localSigningCompletedAtUtc = $null
     localSigningStartedAtShanghai = $null

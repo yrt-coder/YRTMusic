@@ -1,0 +1,11 @@
+YRT Music v1.1
+
+This installer provides the historical v1.1 Windows application. The application interface remains in Simplified Chinese.
+
+Requirements: Windows 10/11 x64, Microsoft .NET Framework 4.8 or later, and an existing installation of Google Chrome. Chrome is not included.
+
+Installation is for the current user. You may choose a writable installation folder. No administrator permission, browser replacement, file association, or certificate trust change is requested. The app does not start automatically after installation.
+
+Use only audio that you are permitted to download. Music rights are not granted by the software's MIT license. Source availability and website behavior can change.
+
+The application stores its settings and separate Chrome profile in the installation folder's data directory when run. Uninstalling retains runtime data and downloaded music.

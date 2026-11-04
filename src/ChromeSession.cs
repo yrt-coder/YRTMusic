@@ -1,4 +1,4 @@
-﻿// YRT-GPT. Visible, isolated Chrome automation. No remote debugging on the user's normal profile.
+﻿// YRT-GPT. Normal Chrome in isolated visible or headless mode. No debugging on the user's normal profile.
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -36,6 +36,7 @@ namespace YrtMusic
         private int nextId;
         private bool disposed;
         private bool started;
+        private bool backgroundMode;
         private string pageSession;
         private string pageTarget;
         private string pageUrl = "about:blank";
@@ -58,18 +59,25 @@ namespace YrtMusic
         }
 
         public string PageUrl { get { lock (sync) return pageUrl; } }
+        public bool IsBackground { get { lock (sync) return backgroundMode; } }
         public bool IsRunning
         {
             get { lock (sync) return started && !disposed && socket != null && socket.State == WebSocketState.Open; }
         }
 
-        public async Task StartAsync(string profileDir, CancellationToken cancellationToken)
+        public Task StartAsync(string profileDir, CancellationToken cancellationToken)
+        {
+            return StartAsync(profileDir, false, cancellationToken);
+        }
+
+        public async Task StartAsync(string profileDir, bool background, CancellationToken cancellationToken)
         {
             if (String.IsNullOrWhiteSpace(profileDir)) throw new ArgumentException("必须为本程序指定独立的 Chrome 资料目录。", "profileDir");
             lock (sync)
             {
                 if (disposed) throw new ObjectDisposedException("ChromeSession");
                 if (started || browserProcess != null) throw new InvalidOperationException("Chrome 会话已经启动，请重用当前会话。");
+                backgroundMode = background;
             }
             cancellationToken.ThrowIfCancellationRequested();
             string fullProfile = Path.GetFullPath(profileDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -92,9 +100,11 @@ namespace YrtMusic
                 if (File.Exists(portFile)) File.Delete(portFile);
                 var info = new ProcessStartInfo(chrome,
                     "--remote-debugging-port=0 --remote-debugging-address=127.0.0.1 --user-data-dir=" + QuoteArgument(fullProfile) +
-                    " --no-first-run --no-default-browser-check --new-window about:blank");
+                    " --no-first-run --no-default-browser-check" +
+                    (background ? " --headless=new --window-size=1440,1000 about:blank" : " --new-window about:blank"));
                 info.UseShellExecute = false;
-                info.CreateNoWindow = false;
+                info.CreateNoWindow = background;
+                if (background) info.WindowStyle = ProcessWindowStyle.Hidden;
                 browserProcess = Process.Start(info);
                 if (browserProcess == null) throw new InvalidOperationException("无法启动 Google Chrome。");
                 string endpoint = null;
@@ -142,6 +152,7 @@ namespace YrtMusic
                 pageSession = Text(attachment, "sessionId");
                 await CommandAsync("Page.enable", null, pageSession, cancellationToken).ConfigureAwait(false);
                 await CommandAsync("Runtime.enable", null, pageSession, cancellationToken).ConfigureAwait(false);
+                if (background) await SetDesktopViewportAsync(pageSession, cancellationToken).ConfigureAwait(false);
                 await CommandAsync("Browser.setDownloadBehavior", Dict("behavior", "deny", "eventsEnabled", true), null, cancellationToken).ConfigureAwait(false);
                 lock (sync) started = true;
             }
@@ -185,7 +196,16 @@ namespace YrtMusic
         public async Task BringToFrontAsync(CancellationToken cancellationToken)
         {
             RequireRunning();
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsBackground) return;
             await CommandAsync("Page.bringToFront", null, pageSession, cancellationToken).ConfigureAwait(false);
+        }
+
+        private Task<Dictionary<string, object>> SetDesktopViewportAsync(string session, CancellationToken cancellationToken)
+        {
+            // Desktop layout only. The real Chrome user agent and normal request headers are unchanged.
+            return CommandAsync("Emulation.setDeviceMetricsOverride", Dict("width", 1440, "height", 1000,
+                "deviceScaleFactor", 1, "mobile", false, "screenWidth", 1440, "screenHeight", 1000), session, cancellationToken);
         }
 
         public async Task<ChromeDownload> DownloadAsync(string url, string destinationDirectory, CancellationToken cancellationToken)
@@ -211,6 +231,7 @@ namespace YrtMusic
                 state.SessionId = Text(await CommandAsync("Target.attachToTarget", Dict("targetId", state.TargetId, "flatten", true), null, cancellationToken).ConfigureAwait(false), "sessionId");
                 await CommandAsync("Page.enable", null, state.SessionId, cancellationToken).ConfigureAwait(false);
                 await CommandAsync("Runtime.enable", null, state.SessionId, cancellationToken).ConfigureAwait(false);
+                if (IsBackground) await SetDesktopViewportAsync(state.SessionId, cancellationToken).ConfigureAwait(false);
                 await CommandAsync("Network.enable", null, state.SessionId, cancellationToken).ConfigureAwait(false);
                 var tree = await CommandAsync("Page.getFrameTree", null, state.SessionId, cancellationToken).ConfigureAwait(false);
                 state.FrameId = Text(AsDictionary(Get(AsDictionary(Get(tree, "frameTree")), "frame")), "id");

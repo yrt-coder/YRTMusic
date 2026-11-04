@@ -17,7 +17,7 @@ v1.0.0 对应的现有标签是 `v1.0`。该 Release 的 `published_at` 为 `202
 3. 使用 `build.ps1` 构建，在仓库根目录运行：
 
    ```powershell
-   .\tools\release\Verify-ReleaseDate.ps1 -Root . -ExePath .\Build\YRT-GPT_MusicBatch.exe -CheckGitHub
+   .\tools\release\Verify-ReleaseDate.ps1 -Root . -ExePath .\Build\YRT-GPT_MusicDownloader.exe -CheckGitHub
    ```
 
 4. 核验必须确认 GitHub 发布记录、`release.json`、构建程序的日期以及发布文档一致。打开实际程序“关于”，并检查 ZIP 内说明和最终下载附件；全部一致后完成发布验收。
@@ -28,3 +28,9 @@ v1.0.0 对应的现有标签是 `v1.0`。该 Release 的 `published_at` 为 `202
 修正已发布版本时，继续使用该 Release 原有 `published_at`。本次 v1.0.0 日期修正属于现有版本的文案校正，不创建新版本、不重新计算原发布日期，也不重置现有 Release 的 `published_at`。修正操作当天的日期不能冒充原正式发布日期。
 
 编译记录、数字签名时间戳、文件创建与修改时间、提交时间和核验记录保留各自真实时间，不改成版本发布日期。版权年份按实际版权信息保留。
+
+## v1.1 审核候选
+
+v1.1 的 `status` 在正式发布前必须为 `UnpublishedCandidate`，`release_date`、`published_at`、`release_id` 保持为空。关于页、版本历史及文档显示“待正式发布”。不得把历史开发验收的 2026-10-25 当作正式发布日期。
+
+仅检查本地候选可加 `-AllowUnpublishedCandidate`。该检查通过只代表候选信息一致，不代表已经在 GitHub 正式发布。正式发布验收必须使用 `-CheckGitHub`，读取真实的 Release 身份和发布时间，并复核重新构建、重新签署后的程序、安装器、ZIP 和公开下载。

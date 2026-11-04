@@ -1,11 +1,20 @@
 {
-  "schema_version": 1,
-  "display_version": "1.0.0",
-  "assembly_version": "1.0.0.0",
-  "tag": "v1.0",
-  "release_date": "2026-10-31",
+  "schema_version": 2,
+  "display_version": "1.1",
+  "assembly_version": "1.1.0.0",
+  "tag": "v1.1",
+  "status": "UnpublishedCandidate",
+  "release_date": null,
   "date_timezone": "Asia/Shanghai",
-  "published_at": "2026-10-31T05:09:48Z",
-  "release_url": "https://github.com/yrt-coder/YRTMusic/releases/tag/v1.0",
-  "release_id": 429735560
+  "published_at": null,
+  "release_url": "https://github.com/yrt-coder/YRTMusic/releases/tag/v1.1",
+  "release_id": null,
+  "historical_releases": [
+    {
+      "display_version": "1.0.0",
+      "tag": "v1.0",
+      "release_date": "2026-10-31",
+      "published_at": "2026-10-31T05:09:48Z"
+    }
+  ]
 }
