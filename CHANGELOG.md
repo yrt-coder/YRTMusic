@@ -1,10 +1,10 @@
 # Changelog / 更新记录
 
-## 1.1 — Pending formal publication / 待正式发布
+## 1.1 — 2026-11-04
 
-This is the historical v1.1 feature set prepared for its first formal GitHub release. Planned tag: `v1.1`; application file version: `1.1.0.0`. The official release date is not set until publication is verified under the [release policy](docs/ReleasePolicy.md).
+Historical v1.1, formally published on 2026-11-04 (Asia/Shanghai), derived from GitHub `published_at`: `2026-11-04T09:15:12Z`. Tag: `v1.1`; application file version: `1.1.0.0`. See the [release policy](docs/ReleasePolicy.md).
 
-本次将历史 v1.1 功能整理为 GitHub 正式发布候选。拟用标签 `v1.1`，程序文件版本 `1.1.0.0`；正式发布日期待实际发布后核实。
+历史 v1.1 正式发布日期为 2026-11-04（Asia/Shanghai），取自本次 GitHub 实际发布时间。标签 `v1.1`，程序文件版本 `1.1.0.0`。
 
 - Search by artist, song title, or part of a title, then choose results yourself. Searching no longer starts downloads automatically. / 按歌手、歌名或部分关键词搜索，先展示结果，再自行选择；搜索不再自动下载。
 - Download one result or select multiple songs; browse the result pages provided by the site. / 支持逐首下载、勾选多首下载及网站实际结果分页。
@@ -13,9 +13,9 @@ This is the historical v1.1 feature set prepared for its first formal GitHub rel
 - Keep 12, 14, and 16 pt text, with 14 pt as the default, plus operation cancellation and download records. / 保留 12、14、16 磅字号，默认 14 磅，并支持取消和查看下载记录。
 - Prepare an x64 installer with a selectable installation folder and Simplified Chinese, Traditional Chinese, and English installer languages, alongside a portable ZIP and browsable application source. The application remains in Chinese. / 增加可自选目录的 x64 安装包，安装向导支持简体、繁体、English 三语，同时提供便携 ZIP 和展开源码；程序界面保持中文。
 
-This candidate does not include later versions' playback, encrypted caching, YouTube integration, or additional audio formats. Historical local checks from 2026-10-25 are development evidence, not this release's publication date or proof of a new live-service test.
+This version does not include later versions' playback, encrypted caching, YouTube integration, or additional audio formats. Historical local checks remain development evidence and do not replace this release's actual verification.
 
-本候选不包含后续版本的播放、加密缓存、YouTube 或其他音频格式功能。2026-10-25 的本机检查属于历史开发证据，不能作为本次正式发布日期或本轮在线服务复测结果。
+本版本不包含后续版本的播放、加密缓存、YouTube 或其他音频格式功能。历史本机检查保留为开发证据，不代替本次正式发布核验。
 
 ## 1.0.0 — 2026-10-31
 

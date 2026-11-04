@@ -3,12 +3,12 @@
   "display_version": "1.1",
   "assembly_version": "1.1.0.0",
   "tag": "v1.1",
-  "status": "UnpublishedCandidate",
-  "release_date": null,
+  "status": "Published",
+  "release_date": "2026-11-04",
   "date_timezone": "Asia/Shanghai",
-  "published_at": null,
+  "published_at": "2026-11-04T09:15:12Z",
   "release_url": "https://github.com/yrt-coder/YRTMusic/releases/tag/v1.1",
-  "release_id": null,
+  "release_id": 433725912,
   "historical_releases": [
     {
       "display_version": "1.0.0",

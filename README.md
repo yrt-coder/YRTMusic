@@ -5,7 +5,6 @@
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
   <p>
     <img src="https://img.shields.io/badge/version-1.1-087f5b" alt="Version 1.1">
-    <img src="https://img.shields.io/badge/status-pending%20publication-d29922" alt="Pending formal publication">
     <img src="https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-1677c8" alt="Windows 10 and 11 x64">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6366a3" alt="MIT license"></a>
   </p>
@@ -20,16 +19,16 @@ YRT Music is a Windows music downloader. Enter an artist, song title, or part of
 
 ## Download
 
-**v1.1 is awaiting formal GitHub publication. Its official release date is not set in this review draft.** The date will be verified from GitHub after publication; see the [release policy](docs/ReleasePolicy.md).
+**Official release date: 2026-11-04 (Asia/Shanghai).** Derived from this GitHub Release's actual `published_at`. See the [release policy](docs/ReleasePolicy.md).
 
-| Platform | Planned release file | Use |
+| Platform | Download file | Use |
 | --- | --- | --- |
-| Windows 10 / 11, 64-bit | `YRTMusic-Setup-v1.1-x64.exe` | Install for the current Windows user and choose the installation folder. Installer languages: Simplified Chinese, Traditional Chinese, and English. |
-| Windows 10 / 11, 64-bit | `YRTMusic-v1.1.zip` | Extract the complete folder and run without an installer. Complete application source is included. |
+| Windows 10 / 11, 64-bit | [YRTMusic-Setup-v1.1-x64.exe](https://github.com/yrt-coder/YRTMusic/releases/download/v1.1/YRTMusic-Setup-v1.1-x64.exe) | Install for the current Windows user and choose the installation folder. Installer languages: Simplified Chinese, Traditional Chinese, and English. |
+| Windows 10 / 11, 64-bit | [YRTMusic-v1.1.zip](https://github.com/yrt-coder/YRTMusic/releases/download/v1.1/YRTMusic-v1.1.zip) | Extract the complete folder and run without an installer. Complete application source is included. |
 
 Both packages require **.NET Framework 4.8** and an installed **Google Chrome**. The application interface is in Chinese. The installer languages do not change the application's language.
 
-After publication, the packages will be available in [GitHub Releases](https://github.com/yrt-coder/YRTMusic/releases). The portable ZIP will also appear in the repository's root file list. For now, the existing [v1.0 release](https://github.com/yrt-coder/YRTMusic/releases/tag/v1.0) remains available.
+Download from [GitHub Releases](https://github.com/yrt-coder/YRTMusic/releases/tag/v1.1). The portable ZIP is also available in the repository root. The earlier [v1.0 release](https://github.com/yrt-coder/YRTMusic/releases/tag/v1.0) remains available.
 
 For the portable package, extract every file before opening `YRT-GPT_MusicDownloader.exe`. Keep the accompanying files with the program.
 
@@ -47,7 +46,7 @@ For the portable package, extract every file before opening `YRT-GPT_MusicDownlo
   <img src="docs/images/app-v1.1.png" width="960" alt="The actual YRT Music v1.1 Windows interface">
 </p>
 
-*Actual Windows screenshot from this v1.1 candidate, showing the results of one live Beyond search. The interface uses Chinese labels.*
+*Actual Windows screenshot from this v1.1 release, showing the results of one live Beyond search. The interface uses Chinese labels.*
 
 ## Usage
 
@@ -71,7 +70,7 @@ cd YRTMusic
 
 Build on Windows with the .NET Framework C# compiler. The build produces `Build/YRT-GPT_MusicDownloader.exe`; no NuGet packages or additional .NET SDK are needed. Building and release signing are separate steps. Preserve the release metadata and accompanying files when preparing a complete package.
 
-The public version is **v1.1**, with application file version **1.1.0.0** and planned GitHub tag **v1.1**. The earlier **v1.0.0** release retains its original tag **v1.0** and official release date **2026-10-31**.
+The public version is **v1.1**, with application file version **1.1.0.0** and GitHub tag **v1.1**. The earlier **v1.0.0** release retains its original tag **v1.0** and official release date **2026-10-31**.
 
 ## Support
 

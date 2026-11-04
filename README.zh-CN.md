@@ -5,7 +5,6 @@
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
   <p>
     <img src="https://img.shields.io/badge/version-1.1-087f5b" alt="版本 1.1">
-    <img src="https://img.shields.io/badge/status-pending%20publication-d29922" alt="待正式发布">
     <img src="https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-1677c8" alt="Windows 10 和 11，64 位">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6366a3" alt="MIT 许可证"></a>
   </p>
@@ -20,16 +19,16 @@ YRT Music 是一个 Windows 音乐下载工具。输入歌手、歌名或部分�
 
 ## 下载
 
-**v1.1 尚待在 GitHub 正式发布，本审核稿未确定正式发布日期。** 发布后会按 GitHub 的实际发布时间核实日期，规则见[发布规范](docs/ReleasePolicy.md)。
+**正式发布日期：2026-11-04（Asia/Shanghai）。** 日期取自本次 GitHub Release 的实际 `published_at`，规则见[发布规范](docs/ReleasePolicy.md)。
 
-| 系统 | 拟发布文件 | 使用方式 |
+| 系统 | 下载文件 | 使用方式 |
 | --- | --- | --- |
-| Windows 10 / 11，64 位 | `YRTMusic-Setup-v1.1-x64.exe` | 为当前 Windows 用户安装，可自选安装目录；安装向导提供简体中文、繁体中文、English。 |
-| Windows 10 / 11，64 位 | `YRTMusic-v1.1.zip` | 完整解压后直接运行，附完整应用源码。 |
+| Windows 10 / 11，64 位 | [YRTMusic-Setup-v1.1-x64.exe](https://github.com/yrt-coder/YRTMusic/releases/download/v1.1/YRTMusic-Setup-v1.1-x64.exe) | 为当前 Windows 用户安装，可自选安装目录；安装向导提供简体中文、繁体中文、English。 |
+| Windows 10 / 11，64 位 | [YRTMusic-v1.1.zip](https://github.com/yrt-coder/YRTMusic/releases/download/v1.1/YRTMusic-v1.1.zip) | 完整解压后直接运行，附完整应用源码。 |
 
 两种下载包均需要 **.NET Framework 4.8** 和已安装的 **Google Chrome**。**程序界面保持中文**，安装向导的三种语言不改变程序语言。
 
-正式发布后，可在 [GitHub Releases](https://github.com/yrt-coder/YRTMusic/releases) 下载；便携 ZIP 也会放在仓库首页文件列表。目前已有的 [v1.0 下载](https://github.com/yrt-coder/YRTMusic/releases/tag/v1.0)继续保留。
+在 [GitHub Releases](https://github.com/yrt-coder/YRTMusic/releases/tag/v1.1) 下载；便携 ZIP 同时放在仓库首页文件列表。此前的 [v1.0 下载](https://github.com/yrt-coder/YRTMusic/releases/tag/v1.0)继续保留。
 
 使用便携版时，请完整解压后运行 `YRT-GPT_MusicDownloader.exe`，保留程序旁的配套文件。
 
@@ -47,7 +46,7 @@ YRT Music 是一个 Windows 音乐下载工具。输入歌手、歌名或部分�
   <img src="docs/images/app-v1.1.png" width="960" alt="YRT Music v1.1 的真实 Windows 界面">
 </p>
 
-*从本次 v1.1 审核候选程序截取的真实 Windows 界面，显示一次 Beyond 实际搜索结果。程序使用中文标签。*
+*从本次 v1.1 正式程序截取的真实 Windows 界面，显示一次 Beyond 实际搜索结果。程序使用中文标签。*
 
 ## 使用方法
 
@@ -71,7 +70,7 @@ cd YRTMusic
 
 在 Windows 上使用 .NET Framework C# 编译器构建，生成 `Build/YRT-GPT_MusicDownloader.exe`，无需 NuGet 包或额外 .NET SDK。程序构建和发布签名分别进行；制作完整下载包时，应保留发布信息及配套文件。
 
-本次公开版本为 **v1.1**，程序文件版本为 **1.1.0.0**，拟用 GitHub 标签为 **v1.1**。此前 **v1.0.0** 保留原标签 **v1.0**，正式发布日期仍是 **2026-10-31**。
+本次公开版本为 **v1.1**，程序文件版本为 **1.1.0.0**，GitHub 标签为 **v1.1**。此前 **v1.0.0** 保留原标签 **v1.0**，正式发布日期仍是 **2026-10-31**。
 
 ## 支持
 

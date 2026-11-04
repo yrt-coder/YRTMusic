@@ -1,8 +1,8 @@
-# YRT Music v1.1 — Release review draft / 发布审核稿
+# YRT Music v1.1
 
-**Status: awaiting user review and formal publication. Official release date: not yet set.**
+**Official release date: 2026-11-04 (Asia/Shanghai).**
 
-**状态：等待用户审核及正式发布；正式发布日期尚未确定。**
+**正式发布日期：2026-11-04（Asia/Shanghai）。**
 
 Tag / 标签：`v1.1`  
 Application file version / 程序文件版本：`1.1.0.0`
@@ -25,7 +25,7 @@ v1.1 改为先搜索，再由你选择下载。输入歌手或歌名片段，查
 | File / 文件 | Description / 说明 |
 | --- | --- |
 | `YRTMusic-Setup-v1.1-x64.exe` | Windows x64 installer for the current user; selectable folder; Simplified Chinese, Traditional Chinese, and English installation wizard. / 当前用户 x64 安装包，可自选目录，安装向导支持简体、繁体、English。 |
-| `YRTMusic-v1.1.zip` | Portable folder with application source; also planned for the repository's root file list. / 附应用源码的便携包，同时放入仓库首页文件列表。 |
+| `YRTMusic-v1.1.zip` | Portable folder with application source; also available in the repository's root file list. / 附应用源码的便携包，同时放入仓库首页文件列表。 |
 
 Windows 10 / 11, 64-bit; .NET Framework 4.8; installed Google Chrome. The application interface is Chinese. Run `YRT-GPT_MusicDownloader.exe` after installation or complete extraction.
 
@@ -33,10 +33,10 @@ Windows 10 / 11, 64-bit; .NET Framework 4.8; installed Google Chrome. The applic
 
 ## Verification / 核验状态
 
-The application was rebuilt and signed. The packaged source rebuilt successfully, and candidate release-date consistency checks passed. Actual app UI and About checks passed at 12, 14 and 16 pt; one live Beyond search returned 15 results without downloading. This run did not verify audio downloads. Installer validation is recorded separately in the local review report. Historical v1.1 test records from 2026-10-25 remain historical evidence, not a formal release date or a current download test.
+The application was rebuilt and signed. The packaged source rebuilt successfully, and release-date consistency checks passed. Actual app UI and About checks passed at 12, 14 and 16 pt; one live Beyond search returned 15 results without downloading. This run did not verify audio downloads. Installer validation is recorded separately in the local review report. Historical v1.1 test records remain historical evidence, not a current download test.
 
-本轮已完成程序重新构建与签署、随包源码重建、候选日期一致性检查；12、14、16磅真实界面及关于页通过。一轮 Beyond 实际搜索返回15首，未自动下载；本轮没有实测音频下载。安装器验收另记本地审核报告。2026-10-25 的原版测试记录是历史证据，不是正式发布日期，也不代替本次下载测试。
+本轮已完成程序重新构建与签署、随包源码重建、发布日期一致性检查；12、14、16磅真实界面及关于页通过。一轮 Beyond 实际搜索返回15首，未自动下载；本轮没有实测音频下载。安装器验收另记本地审核报告。原版测试记录保留为历史证据，不代替本次下载测试。
 
-The earlier v1.0.0 release remains available under its original `v1.0` tag, with the official release date **2026-10-31**. This candidate is not published yet. The v1.1 official date will be based on GitHub's actual `published_at` in Asia/Shanghai.
+The earlier v1.0.0 release remains available under its original `v1.0` tag, with the official release date **2026-10-31**. The v1.1 official date 2026-11-04 is based on GitHub's actual `published_at`: `2026-11-04T09:15:12Z`, converted to Asia/Shanghai.
 
-此前 v1.0.0 保留原标签 `v1.0` 及正式发布日期 **2026-10-31**。本候选尚未发布，v1.1 日期须以 GitHub 实际 `published_at` 换算上海时间核实。
+此前 v1.0.0 保留原标签 `v1.0` 及正式发布日期 **2026-10-31**。v1.1 正式日期 2026-11-04 依据 GitHub 实际 `published_at`：`2026-11-04T09:15:12Z`，按上海时间换算。
